@@ -1,4 +1,4 @@
-FROM bitnami/wordpress:4.8.3-r0
+FROM bitnami/wordpress:4-master
 
 # Add new scripts and configs to use sub directory.
 COPY ./scripts/app-entrypoint.sh /app-entrypoint.sh
