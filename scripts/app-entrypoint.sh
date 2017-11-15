@@ -8,7 +8,7 @@ print_welcome_page
 # Reset initialization flag to re-initialize.
 if [ -f '/bitnami/wordpress/.initialized' ]; then
   rm /bitnami/wordpress/.initialized
-  cat /configs/wp-config.php.init > /opt/bitnami/wordpress/wp-config.php
+  cp /configs/wp-config.php.init /opt/bitnami/wordpress/wp-config.php
 fi
 
 if [[ "$1" == "nami" && "$2" == "start" ]] || [[ "$1" == "/init.sh" ]]; then
@@ -17,13 +17,14 @@ if [[ "$1" == "nami" && "$2" == "start" ]] || [[ "$1" == "/init.sh" ]]; then
 fi
 
 # Replace config to use sub directory and use SSL forced in Admin's settings page.
-/bin/cat /configs/wordpress-vhost.conf > /opt/bitnami/apache/conf/vhosts/wordpress-vhost.conf
+cp /configs/wordpress-vhost.conf /opt/bitnami/apache/conf/vhosts/wordpress-vhost.conf
 TLSCONFIG=$(sed -e ':loop;N;$!b loop;s/\n/\\n/g;s/&/\\&/g' <<'EOS'
 /** enable TLS forced in reverse proxy environment */
 // FORCE TLS ADMIN
 define('FORCE_SSL_ADMIN', true);
 
-// Avoid TLS roop
+// Avoid TLS loop
+//   cf. https://qiita.com/hirror/items/bb96e236c3ffc41e890e#%E3%83%AA%E3%83%90%E3%83%BC%E3%82%B9%E3%83%97%E3%83%AD%E3%82%AD%E3%82%B7%E3%82%92%E4%BD%BF%E7%94%A8%E3%81%97%E3%81%A6%E3%81%84%E3%82%8B%E5%A0%B4%E5%90%88%E3%81%AEssl%E9%80%9A%E4%BF%A1 
 if ( ! empty( $_SERVER['HTTP_X_FORWARDED_PROTO'] ) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https' ) {
        $_SERVER['HTTPS']='on';
 }
@@ -31,9 +32,10 @@ if ( ! empty( $_SERVER['HTTP_X_FORWARDED_PROTO'] ) && $_SERVER['HTTP_X_FORWARDED
 EOS
 )
 /bin/sed -i \
-  -e "s|/\* That's all, stop editing\! Happy blogging. \*/|${TLSCONFIG}\n/\* That's all, stop editing\! Happy blogging. \*/|" \
-  -e "s|^define('WP_SITEURL'.*$|define('WP_SITEURL', 'http://' . \$_SERVER['HTTP_HOST'] . '/wp');define('WP_HOME', 'http://' . \$_SERVER['HTTP_HOST'] . '/wp');/** Absolute path to the WordPress directory. */|" \
-  -e "s|^define('WP_TEMP_DIR'.*$|define('WP_TEMP_DIR', '/opt/bitnami/wordpress/wp/tmp/');|" \
+  -e "s|\(/\* That's all, stop editing\! Happy blogging. \*/\)|${TLSCONFIG}\n\1|" \
+  -e "/^define('WP_SITEURL'/  s|'/'|'/wp'|g" \
+  -e "/^define('WP_TEMP_DIR'/ s|'/opt/bitnami/wordpress/tmp/'|'/opt/bitnami/wordpress/wp/tmp/'|" \
+  -e "/^\s*define('ABSPATH'/  s|'/opt/bitnami/wordpress'|'/opt/bitnami/wordpress/wp'|" \
   /opt/bitnami/wordpress/wp-config.php
 
 # Move contents to sub directory.
