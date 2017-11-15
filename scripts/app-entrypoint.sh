@@ -17,9 +17,24 @@ if [[ "$1" == "nami" && "$2" == "start" ]] || [[ "$1" == "/init.sh" ]]; then
 fi
 
 # Replace config to use sub directory and use SSL forced in Admin's settings page.
-/bin/cat /configs/wordpress-https-vhost.conf > /opt/bitnami/apache/conf/vhosts/wordpress-https-vhost.conf
 /bin/cat /configs/wordpress-vhost.conf > /opt/bitnami/apache/conf/vhosts/wordpress-vhost.conf
-/bin/cat /configs/wp-config.php > /opt/bitnami/wordpress/wp-config.php
+TLSCONFIG=$(sed -e ':loop;N;$!b loop;s/\n/\\n/g;s/&/\\&/g' <<'EOS'
+/** enable TLS forced in reverse proxy environment */
+// FORCE TLS ADMIN
+define('FORCE_SSL_ADMIN', true);
+
+// Avoid TLS roop
+if ( ! empty( $_SERVER['HTTP_X_FORWARDED_PROTO'] ) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https' ) {
+       $_SERVER['HTTPS']='on';
+}
+
+EOS
+)
+/bin/sed -i \
+  -e "s|/\* That's all, stop editing\! Happy blogging. \*/|${TLSCONFIG}\n/\* That's all, stop editing\! Happy blogging. \*/|" \
+  -e "s|^define('WP_SITEURL'.*$|define('WP_SITEURL', 'http://' . \$_SERVER['HTTP_HOST'] . '/wp');define('WP_HOME', 'http://' . \$_SERVER['HTTP_HOST'] . '/wp');/** Absolute path to the WordPress directory. */|" \
+  -e "s|^define('WP_TEMP_DIR'.*$|define('WP_TEMP_DIR', '/opt/bitnami/wordpress/wp/tmp/');|" \
+  /opt/bitnami/wordpress/wp-config.php
 
 # Move contents to sub directory.
 if [ -d '/opt/bitnami/wordpress' ]; then
