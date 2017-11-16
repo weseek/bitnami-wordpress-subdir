@@ -20,9 +20,6 @@ fi
 cp /configs/wordpress-vhost.conf /opt/bitnami/apache/conf/vhosts/wordpress-vhost.conf
 TLSCONFIG=$(sed -e ':loop;N;$!b loop;s/\n/\\n/g;s/&/\\&/g' <<'EOS'
 /** enable TLS forced in reverse proxy environment */
-// FORCE TLS ADMIN
-define('FORCE_SSL_ADMIN', true);
-
 // Avoid TLS loop
 //   cf. https://qiita.com/hirror/items/bb96e236c3ffc41e890e#%E3%83%AA%E3%83%90%E3%83%BC%E3%82%B9%E3%83%97%E3%83%AD%E3%82%AD%E3%82%B7%E3%82%92%E4%BD%BF%E7%94%A8%E3%81%97%E3%81%A6%E3%81%84%E3%82%8B%E5%A0%B4%E5%90%88%E3%81%AEssl%E9%80%9A%E4%BF%A1 
 if ( ! empty( $_SERVER['HTTP_X_FORWARDED_PROTO'] ) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https' ) {
