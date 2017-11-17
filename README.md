@@ -7,7 +7,7 @@ A Wordpress based on bitnami/wordpress with replacing configs to use sub directo
 You need to get docker-compose.yml to start bitnami-wordpress-subdir.
 
 ```
-$ curl -l https://github.com/weseek/bitnami-wordpress-subdir/blob/master/docker-compose.yml
+$ curl -l https://raw.githubusercontent.com/weseek/bitnami-wordpress-subdir/master/docker-compose.yml -o docker-compose.yml
 ```
 
 Finished instaration, you can start bitnami-wordpress-subdir.
