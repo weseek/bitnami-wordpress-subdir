@@ -25,7 +25,11 @@ if ( ! empty( $_SERVER['HTTP_X_FORWARDED_PROTO'] ) && $_SERVER['HTTP_X_FORWARDED
 
 EOS
 )
-  /bin/sed -i \
+  # Replace config to enable sub directory
+  # NOTE: Option `--follow-symlinks` is needed for sed, because 
+  #         "/opt/bitnami/wordpress/wp-config.php" is a symbolic link.
+  #       cf. https://tsuchinoko.dmmlabs.com/?p=678
+  /bin/sed -i --follow-symlinks \
     -e "s|\(/\* That's all, stop editing\! Happy blogging. \*/\)|${TLSCONFIG}\n\1|" \
     -e "/^define('WP_SITEURL'/  s|'/'|'/wp'|g" \
     -e "/^define('WP_TEMP_DIR'/ s|'/opt/bitnami/wordpress/tmp/'|'/opt/bitnami/wordpress/wp/tmp/'|" \
