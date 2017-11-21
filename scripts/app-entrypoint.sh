@@ -5,16 +5,29 @@
 
 print_welcome_page
 
+# Move contents to sub directory
+if [ ! -d '/opt/bitnami/wordpress/wp' ]; then
+  mv /opt/bitnami/wordpress /opt/bitnami/wp
+  mkdir /opt/bitnami/wordpress
+  mv /opt/bitnami/wp /opt/bitnami/wordpress/
+fi
+
+# Replace config of installed directory of wordpress
+/bin/sed -i \
+  -e '/"installdir":/ s|"/opt/bitnami/wordpress"|"/opt/bitnami/wordpress/wp"|' \
+  ~/.nami/registry.json
+
+# initialize apache, php, mysql-client, wordpress by nami
 if [[ "$1" == "nami" && "$2" == "start" ]] || [[ "$1" == "/init.sh" ]]; then
   . /init.sh
   nami_initialize apache php mysql-client wordpress
 fi
 
-# Replace config to use sub directory
+# Replace apache config to enable sub directory
 cp /configs/wordpress-vhost.conf /opt/bitnami/apache/conf/vhosts/wordpress-vhost.conf
 
-# Move contents to sub directory.
-if [ ! -d '/opt/bitnami/wordpress/wp' ]; then
+# Replace wordpress config to enable sub directory
+if [ ! -f '/bitnami/wordpress/.subdirized' ]; then
   TLSCONFIG=$(sed -e ':loop;N;$!b loop;s/\n/\\n/g;s/&/\\&/g' <<'EOS'
 /** enable TLS forced in reverse proxy environment */
 // Avoid TLS loop
@@ -32,13 +45,9 @@ EOS
   /bin/sed -i --follow-symlinks \
     -e "s|\(/\* That's all, stop editing\! Happy blogging. \*/\)|${TLSCONFIG}\n\1|" \
     -e "/^define('WP_SITEURL'/  s|'/'|'/wp'|g" \
-    -e "/^define('WP_TEMP_DIR'/ s|'/opt/bitnami/wordpress/tmp/'|'/opt/bitnami/wordpress/wp/tmp/'|" \
-    -e "/^\s*define('ABSPATH'/  s|'/opt/bitnami/wordpress'|'/opt/bitnami/wordpress/wp'|" \
-    /opt/bitnami/wordpress/wp-config.php
+    /opt/bitnami/wordpress/wp/wp-config.php
 
-  mv /opt/bitnami/wordpress /opt/bitnami/wp
-  mkdir /opt/bitnami/wordpress
-  mv /opt/bitnami/wp /opt/bitnami/wordpress/
+  touch /bitnami/wordpress/.subdirized || true
 fi
 
 exec tini -- "$@"
