@@ -24,7 +24,9 @@ if [[ "$1" == "nami" && "$2" == "start" ]] || [[ "$1" == "/init.sh" ]]; then
 fi
 
 # Replace apache config to enable sub directory
-cp /configs/wordpress-vhost.conf /opt/bitnami/apache/conf/vhosts/wordpress-vhost.conf
+APACHE_CONF_DIR='/opt/bitnami/apache/conf/vhosts/'
+cp /configs/wordpress-vhost.conf $APACHE_CONF_DIR
+cp /configs/wordpress-https-vhost.conf $APACHE_CONF_DIR
 
 # Replace wordpress config to enable sub directory
 if [ ! -f '/bitnami/wordpress/.subdirized' ]; then
@@ -44,7 +46,8 @@ EOS
   #       cf. https://tsuchinoko.dmmlabs.com/?p=678
   /bin/sed -i --follow-symlinks \
     -e "s|\(/\* That's all, stop editing\! Happy blogging. \*/\)|${TLSCONFIG}\n\1|" \
-    -e "/^define('WP_SITEURL'/  s|'/'|'/wp'|g" \
+    -e "/^define('WP_SITEURL'/ s|'/'|'/wp'|g" \
+    -e "/^define('WP_SITEURL'/ s|'http://'|'https://'|g" \
     /opt/bitnami/wordpress/wp/wp-config.php
 
   touch /bitnami/wordpress/.subdirized || true
